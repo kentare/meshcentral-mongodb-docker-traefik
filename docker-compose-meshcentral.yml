@@ -1,0 +1,53 @@
+version: '3'
+
+networks:
+  meshcentral-tier:
+    driver: bridge
+  web:
+    external: true
+
+services:
+  mongodb:
+    restart: always
+    container_name: mongodb
+    image: mongo:latest
+    env_file:
+      - .env
+    volumes:
+      # mongodb data-directory - A must for data persistence
+      - ./meshcentral/mongodb_data:/data/db
+    networks:
+      - meshcentral-tier
+
+  meshcentral:
+    restart: always
+    container_name: meshcentral
+    # use the official meshcentral container
+    image: ghcr.io/ylianst/meshcentral:latest
+    depends_on:
+      - mongodb
+    ports:
+      - 8086:4430
+    volumes: # The volumes will be created automaticly if they do not exists. The only directory that should exist when installing fresh is is meshcentral/data
+      # config.json and other important files live here. A must for data persistence
+      - ./meshcentral/data:/opt/meshcentral/meshcentral-data
+      # where file uploads for users live
+      - ./meshcentral/user_files:/opt/meshcentral/meshcentral-files
+      # location for the meshcentral-backups - this should be mounted to an external storage
+      - ./meshcentral/backup:/opt/meshcentral/meshcentral-backup
+      # location for site customization files
+      - ./meshcentral/web:/opt/meshcentral/meshcentral-web
+    labels:
+      - 'traefik.enable=true' # Tells Traefik to proxy this container
+      - 'traefik.http.routers.mesh-web.rule=Host(`mesh.kentare.no`)' # Domain name for http rule
+      - 'traefik.http.routers.mesh-web.entrypoints=web' # Define the entrypoint for http
+      - 'traefik.http.routers.mesh-web.middlewares=redirect@file' # This is the  middleware to redirect to https
+      - 'traefik.http.routers.mesh-secured.rule=Host(`mesh.kentare.no`)' # Domain name for  https rule
+      - 'traefik.http.routers.mesh-secured.entrypoints=web-secured' # Define the entrypoint for https
+      - 'traefik.http.routers.mesh-secured.service=mesh-secured' # Define new service named mesh secured on the route
+      - 'traefik.http.services.mesh-secured.loadbalancer.server.port=4430' # Tell traefik explicitly to use port 4430
+      - 'traefik.http.routers.mesh-secured.tls.certresolver=mytlschallenge' # How to create certs
+
+    networks:
+      - meshcentral-tier
+      - web

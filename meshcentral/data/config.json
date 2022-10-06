@@ -1,0 +1,32 @@
+{
+  "$schema": "http://info.meshcentral.com/downloads/meshcentral-config-schema.json",
+  "settings": {
+    "plugins": { "enabled": false },
+    "mongoDb": "mongodb://USERNAME:PASSWORD@mongodb:27017",
+    "_WANonly": true,
+    "_LANonly": true,
+    "_sessionKey": "WHATEVER PASSORD",
+    "TLSOffload": true,
+    "SelfUpdate": false,
+    "AllowFraming": false,
+    "WebRTC": false,
+    "Cert": "mesh.example.com",
+    "Port": 4430,
+    "AliasPort": 443,
+    "RedirPort": 800,
+    "_redirAliasPort": 80,
+    "TlsOffload": "111.22.333.444"
+  },
+  "domains": {
+    "": {
+      "_title": "Title1",
+      "_title2": "Title 2",
+      "minify": true,
+      "NewAccounts": true,
+      "localSessionRecording": false,
+      "_userNameIsEmail": true,
+      "certUrl": "mesh.example.com",
+      "agentConfig": ["webSocketMaskOverride=1"]
+    }
+  }
+}

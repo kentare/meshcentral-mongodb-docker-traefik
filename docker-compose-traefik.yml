@@ -1,0 +1,32 @@
+version: '3'
+services:
+  traefik:
+    image: traefik:v2.0
+    restart: always
+    container_name: traefik
+    ports:
+      - '80:80' # http
+      - '443:443' # https
+    command:
+      ## Provider Settings - https://docs.traefik.io/providers/docker/#provider-configuration ##
+      - --providers.docker=true # Set docker as the provider for traefik
+      - --providers.docker.exposedbydefault=false # You need to whitelist containers that will be exposed to traefik
+      - --providers.file.filename=/dynamic.yaml # Referring to the https upgrade file
+      - --providers.docker.network=web # Use the docker network web for communication between traefik and containser
+      ## Entrypoints Settings - https://docs.traefik.io/routing/entrypoints/#configuration ##
+      - --entrypoints.web.address=:80 # Define an entrypoint for port :80 named web (this can be whatever)
+      - --entrypoints.web-secured.address=:443 # Define an entrypoint for https on port :443 named web-secured (this can be whatever)
+      ## Certificate Settings (Let's Encrypt) -  https://docs.traefik.io/https/acme/#configuration-examples ##
+      - --certificatesresolvers.mytlschallenge.acme.tlschallenge=true
+      - --certificatesresolvers.mytlschallenge.acme.email=YOUREMAILHERE
+      - --certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json
+    volumes:
+      - ./letsencrypt:/letsencrypt # Volume for certs (TLS)
+      - /var/run/docker.sock:/var/run/docker.sock # Volume for docker admin
+      - ./dynamic.yaml:/dynamic.yaml # Volume for dynamic conf file, **ref: line 14
+    networks:
+      - web # Tell the container that it has access to this network
+
+networks:
+  web:
+    external: true
